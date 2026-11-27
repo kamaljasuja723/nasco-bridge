@@ -10,12 +10,20 @@ DISCOURSE_URL = "https://discourse.group"
 DISCOURSE_API_KEY = os.getenv("DISCOURSE_API_KEY", "3b1385abfa6a408e31effca56abd40bf8af3319d96b416f281be115a5c08db32")
 DISCOURSE_USERNAME = "system"
 
-# Create unverified SSL context to prevent certificate errors on cloud servers
 ssl_context = ssl._create_unverified_context()
+
+# Helper function to fetch URL with proper User-Agent header
+def fetch_json(url):
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+    )
+    with urllib.request.urlopen(req, context=ssl_context, timeout=10) as res:
+        return json.loads(res.read().decode("utf-8"))
 
 @app.get("/")
 def home():
-    return {"status": "online", "version": "v3-safe", "message": "Middleware is active!"}
+    return {"status": "online", "version": "v4-final", "message": "Middleware is active!"}
 
 # 1. Receive webhook data from Discourse and fetch live weather
 @app.post("/discourse-to-nasco")
@@ -27,10 +35,9 @@ async def receive_from_discourse(request: Request):
 
         data = json.loads(raw_body.decode("utf-8"))
 
-        # Fetch live weather for Jaipur using built-in urllib
+        # Fetch live weather for Jaipur
         weather_url = "https://open-meteo.com"
-        req = urllib.request.urlopen(weather_url, context=ssl_context, timeout=10)
-        w_res = json.loads(req.read().decode("utf-8"))
+        w_res = fetch_json(weather_url)
         current_temp = w_res.get("current_weather", {}).get("temperature", "N/A")
 
         post_text = "No text found"
@@ -53,8 +60,7 @@ async def receive_from_discourse(request: Request):
 def sync_weather_to_discourse():
     try:
         weather_url = "https://open-meteo.com"
-        req = urllib.request.urlopen(weather_url, context=ssl_context, timeout=10)
-        w_res = json.loads(req.read().decode("utf-8"))
+        w_res = fetch_json(weather_url)
         weather = w_res.get("current_weather", {})
 
         post_payload = json.dumps({
@@ -69,7 +75,8 @@ def sync_weather_to_discourse():
             headers={
                 "Api-Key": DISCOURSE_API_KEY,
                 "Api-Username": DISCOURSE_USERNAME,
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0"
             },
             method="POST"
         )
