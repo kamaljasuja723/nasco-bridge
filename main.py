@@ -5,7 +5,7 @@ import os
 app = FastAPI()
 
 DISCOURSE_URL = "https://discourse.group"
-DISCOURSE_API_KEY = os.getenv("DISCOURSE_API_KEY", "YOUR_DISCOURSE_API_KEY")
+DISCOURSE_API_KEY = os.getenv("DISCOURSE_API_KEY", "3b1385abfa6a408e31effca56abd40bf8af3319d96b416f281be115a5c08db32")
 DISCOURSE_USERNAME = "system"
 
 @app.get("/")
